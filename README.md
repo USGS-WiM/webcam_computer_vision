@@ -1,16 +1,30 @@
 ![WiM](wimlogo.png)
 
 
-# Project Title
+# I don't have title
 
-One Paragraph of project description goes here
+Using machine learning, deep learning, mini batch stochastic gradiant decent, and some AI to compute the surface area of ice from a 100 X 100 pixel .png image and return the projected inflow/outflow. This method uses eigen vectors taken from a training model and projects them onto a test model to predict an independent variable (y_hat). This y_hat can be surface area occlusion, outflow/inflow, water height. The idea is that this system would use the existing infrustructer to reduce current computation and memeory requirements to a small fraction. Additionally, the project aims to deploy ultra light hardware that can run the regression function on site at < 80 milliamps. 
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
+Requires the standard data science libraries for python3. 
 
 ```
-Give examples
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+#Import the right package
+from scipy.io import loadmat
+from PIL import Image
+from numpy import linalg as LA
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import imageio
+import sys
+import gc
+import math
+import random
 ```
 
 ## Getting Started
@@ -43,12 +57,12 @@ Explain how to run unit tests, if applicable
 
 Add additional notes about how to deploy this on a live system. **Do not include any credentials, IP addresses, or other sensitive information**
 
+So far the system just requires python3. In the future, This system will need boto3 and aws components. I may rewrite this program in RUST.
+
+
 ## Built With
 
-* [Angular](https://angular.io/) - The main web framework used
-* [Clarity UI](https://vmware.github.io/clarity/) - Top-level UI framework if you have one 
-* [NPM](https://www.npmjs.com/) - Dependency Management
-* [Others](https://www.npmjs.com/) - Any other high-level dependencies
+* [Python 3](https://python.og/) - The main web framework used
 
 ## Contributing
 
@@ -66,8 +80,7 @@ To push tags to remote origin: `git push origin --tags`
 
 ## Authors
 
-* **[Jordan Doe](PROFILE_PAGE_URL_HERE)**  - *Lead Developer* - [USGS Web Informatics & Mapping](https://wim.usgs.gov/)
-* **[Jessie Smith](PROFILE_PAGE_URL_HERE)** - *Developer* -  [USGS Web Informatics & Mapping](https://wim.usgs.gov/)
+* **[Daniel Beckman](PROFILE_PAGE_URL_HERE)**  - *Lead Developer* - [USGS Web Informatics & Mapping](https://wim.usgs.gov/)
 
 See also the list of [contributors](../../graphs/contributors) who participated in this project.
 
@@ -77,6 +90,8 @@ This project is licensed under the Creative Commons CC0 1.0 Universal License - 
 
 ## Suggested Citation
 In the spirit of open source, please cite any re-use of the source code stored in this repository. Below is the suggested citation:
+
+Code is scratch code so far. This will change. Lots of other people's work in math and alogothims needs to be added.
 
 `This project contains code produced by the Web Informatics and Mapping (WIM) team at the United States Geological Survey (USGS). As a work of the United States Government, this project is in the public domain within the United States. https://wim.usgs.gov`
 
