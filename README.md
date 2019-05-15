@@ -3,7 +3,7 @@
 
 # I don't have title
 
-Using machine learning, deep learning, mini batch stochastic gradiant decent, and some AI to compute the surface area of ice from a 100 X 100 pixel .png image and return the projected inflow/outflow. This method uses eigen vectors taken from a training model and projects them onto a test model to predict an independent variable (y_hat). This y_hat can be surface area occlusion, outflow/inflow, water height. The idea is that this system would use the existing infrustructer to reduce current computation and memeory requirements to a small fraction. Additionally, the project aims to deploy ultra light hardware that can run the regression function on site at < 80 milliamps. 
+Using machine learning, deep learning, mini batch stochastic gradiant decent, and some AI to compute the surface area of ice from a 100 X 100 pixel .png image and return the projected inflow/outflow. This method uses eigen vectors taken from a training model and projects them onto a test model to predict an independent variable (y_hat). This y_hat can be surface area occlusion, outflow/inflow, water height. The idea is that this system would use the existing infrustructer to reduce current computation and memory requirements to a small fraction. Additionally, the project aims to deploy ultra light hardware that can run the regression function on site at < 80 milliamps. 
 
 ### Prerequisites
 
