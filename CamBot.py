@@ -85,6 +85,10 @@ class Meta_getta:
         self.df_obj = self.df_obj.reset_index(drop= True)
 
 
+
+##### Command Block Meta Getta #####
+
+
 meta = Meta_getta(0, 0, "Gage_height.ACTIVE_(PRIMARY,_MIXER)@04085108.20190201.csv")
 
 meta.meta_getta("large_dataset/")
@@ -98,494 +102,236 @@ Feed_the_mule = Meta_getta(0, 0, 0)
 Feed_the_mule.merge_set(img.df_obj, meta.df_obj)
 
 
-'''
-
-#This part of a group functions involved in extracting meta and target data from a messy data storage system
-
-# As a former scientist I can say that is unrealistic to assume that after 40 years of asking,
-# the scientific community will start properly tagging data. 50% of their time is already occupied handleing data.
-# The idea for this program is that scientists can just throw their data into a hole and the following tools will
-# pull it out and align it for analysis.
-
-#Meta getta is a recusive extraction tool that will mine target data from some point in a file tree. Targets are
-#defined by file extention
-
-def meta_getta(path, f_N):
-    file_list = glob.glob(path + '**/*.jpg', recursive= True)
-    meta = pd.read_csv(path + f_N)
-    return file_list, meta
-
-#Thes next few operations are data frame manipulation that will go away with class implementation
-img, meta = meta_getta("large_dataset/", "Gage_height.ACTIVE_(PRIMARY,_MIXER)@04085108.20190201.csv")
-meta.columns = ['ISO/Time', 'date/time', 'stage reading', 'drp1', 'drp2', 'drp3']
-
-
-img = sorted(img)
-print(len(img))
-
-
-meta[2] = meta[2].map(str) + ' ' + meta[3]
-
-meta = meta.drop(columns = [3])
-
-meta.columns = ['Orginization', 'Station', 'date/time', 'time zone', 'stage reading', 'disposition']
-
-
-timestp = []
-file_path = []
-
-# When images are without meta, this tool can extract the modification time that is tagged. It future we will want
-# hardware to lock, creation time and geocoord to file creation
-
-for i in img:
-    mtime = os.stat(i).st_mtime
-    timestp.append(int(mtime))
-    file_path.append(i)
-
-#Data epoc normilizations for meta
-def norm_time(obj):
-    new = []
-    for i in obj:
-        #print (i)
-        ep = datetime.datetime.fromtimestamp(i)
-        new.append(str(ep.replace(second= 0)))
-    return new
-
-def to_epoch(obj, p):
-    ep = []
-    for i in obj:
-        #print(i)
-        ep.append(timegm(time.strptime(i, p)))
-        tm =timegm(time.strptime(i, p))
-        #print(time.strftime(p, time.gmtime(tm)))
-    return ep
-
-
-# More things that go away with class creation
-dt = meta['date/time']
-dt = dt.tolist()
-
-
-p = '%m/%d/%Y %H:%M'
-a = to_epoch(dt, p)
-p = '%Y-%m-%d %H:%M:%S'
-b = to_epoch(norm_time(timestp), p)
-#print(a)
-#print(b)
-
-
-
-meta = meta.drop(columns =['ISO/Time', 'drp1', 'drp2', 'drp3'])
-meta['date/time'] = a
-
-
-
-
-
-b = np.array(b)
-
-
-img_meta = pd.DataFrame(b, columns = ['date/time'])
-img_meta['path'] = np.array(file_path)
-
-#print(meta['stage reading'].head(5))
-#print(img_meta.head(5))
-
-#img_meta.to_csv("img_check.csv")
-
-# This single line of code is the alignment. It takes all the little adjustments above and does the relational algebra
-# to align epochs from pressure plate stage reading to photographs. The next two commands clean up the data
-merg = meta.set_index('date/time').join(img_meta.set_index('date/time'))
-
-
-merg = merg.dropna(axis=0)
-merg = merg.reset_index()
-#merg.to_csv("checkit.csv")
-print(len(merg))
-
-#print(merg[' Value'].head(5), len(merg))
-'''
-#print(merg.describe)
-#print(len(img))
-'''
-
 #saves data to .csv in a proper data alignment
-merg.to_csv("final_meta.csv")
+Feed_the_mule.df_obj.to_csv("final_meta.csv")
+
+
+###### CV block ######
 
 
 
-# This a tool to manually force grayscale on a numpy arrays. Numpy has issues with .pmg images and so this is a
-# tool for .png file type. It is unused in this demo
-def rgb2gray(rgb):
-    return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
-
-#Takes the feature set aka dependend variables aka X matrix aka the pixel values, converts them to proper dimension,
-# crop, and gray scale, then it flattens the matrix of pixels (n x n) into a vector (n^2 x 1). This is added to a
-# pre-intantiated array of zeros. Which is need to avoid a BIg (O) of space that is n!
-# In other words, that np.zero array is needed or the heap will run out of memory and the kernel will panic.
-
-def get_x(meta):
-    x = meta['path']
-    path = x.tolist()
-    dims = Image.open(path[0])
-    w, h = dims.size
-    print(h, w, len(meta))
-    dimensions = ((2*68)*(2*192))#(int(h-400) * int(w))
-    datas = np.zeros(shape=(len(meta['path'].T), dimensions))
-    print(datas.shape)
-    for i, obj in enumerate(path):
-        img = Image.open(obj)
-        img= img.convert('L')
-        #show_img(img)
-        img = resize(img, 0, 0)
-        #show_img(img)
-        img = np.array(img)
-        datas[i] = np.reshape(img, -1)
-    return datas
 
 
-    #print ('\n')
-    #for i, F_N in enumerate(path):
-        #tmp = (np.asarray(imageio.imread(path)))
-        #dat[i] = np.reshape(tmp, -1)
-        # This is like some techinacal stuff
-        #if i % 100 == 0:
-         #   sys.stdout.write(" loading...   %d%%  \r" % (int((i / len(path)) * 100)))
-          #  sys.stdout.flush()
-            # print (int((i/60327)*100), '%')
-    #sys.stdout.write("\033[0;0m")
-    #gc.collect()
+class Cambrain:
+
+    def __init__(self, df_obj, np_obj, size_int, time_strt, time_end):
+        self.df_obj = df_obj
+        self.np_obj = np_obj
+        self.size_int = size_int
+        self.time_strt = time_strt
+        self.time_end = time_end
+
+    def hacks(self):
+        return "\nTime for process took {:.6f} seconds\n".format(self.time_end - self.time_strt)
+
+    def give_up_the_ghosts(self):
+        n_components = self.np_obj
+        self.time_strt = time.time()
+        self.np_obj = SKPCA(n_components=n_components, whiten=True).fit(self.df_obj)
+        self.time_end = time.time()
+        print(self.hacks())
+
+    # Resizes/crops using the janky PIL library
+
+    def re_size(self):
+        size = (int(self.size_int * 192), int(self.size_int * 108))
+        img = self.df_obj.resize(size, Image.ANTIALIAS)
+        box = (0, int(self.size_int * 20), int(self.size_int * 192), int(self.size_int * 88))
+        self.df_obj = img.crop(box)
 
 
-# Resizes/crops using the janky PIL library
-
-def resize(obj, x, y):
-    size = (int(2*192), int(2*108))
-    img = obj.resize(size, Image.ANTIALIAS)
-    #img = img.filter(ImageFilter.GaussianBlur(radius=2))
-    box = (0, int(2*20), int(2*192), int(2*88))
-    img= img.crop(box)
-    #show_img(img)
-    return img
-
-# Will project a image as long as the pixel values don't contain imaginary numbers.
-
-def show_img(obj):
-    plt.imshow(obj, cmap='gray')
-    plt.show()
+    # Will project a image as long as the pixel values don't contain imaginary numbers.
 
 
-# These next few items are for scatch principle component analysis. I don't need it anymore.
+    def get_x(self):
+        self.time_strt = time.time()
+        x = self.df_obj['path']
+        path = x.tolist()
+        dims = Image.open(path[0])
+        w, h = dims.size
+        #print(h, w, len(meta))
+        dimensions = ((self.size_int * 68) * (self.size_int * 192))  # (int(h-400) * int(w))
+        datas = np.zeros(shape=(len(self.df_obj['path'].values), dimensions))
+        #print(datas.shape)
+        for i, obj in enumerate(path):
+            self.df_obj = Image.open(obj)
+            self.df_obj = self.df_obj.convert('L')
+            self.re_size()
+            self.df_obj = np.array(self.df_obj)
+            datas[i] = np.reshape(self.df_obj, -1)
+        self.df_obj = datas
+        self.time_end = time.time()
+        self.hacks()
 
-def get_mean_vect(dat, depth):
-    vect = dat.T
-    print(vect.shape)
-    mean_vect = []
-    for i, obj, in enumerate(depth):
-        mean_vect.append(np.mean(vect[i]))
-    print('\n--Mean produced--\n')
-    return mean_vect
-
-def center_data(dat, dat_mean):
-    # print (dat[0][0], "   ", dat_mean[0])
-    i = 0
-    while i < len(dat):
-        dat[i] = dat[i] - dat_mean[i]
-        i += 1
-    print('\n--Data centered--\n')
-    return dat
-
-# Establish Scale
-
-scaler = MinMaxScaler()
-
-
-# Scale data Function
-
-def scal_it(datas, scal):
-    return scal.fit_transform(datas)
-
-'''
-# Starting here is our actual CV code
-
-# This is a driver, fetches x for the eigen vectors
-# sets the amount of components (ghosts)
-# calculates the eigen ghosts and stores them in pca
-'''What is happening at this point? Eigen vectors are fragmented versions of some average picture. If my picture is 
-100 x 100 pixels then I have 10,000 pixels and therefore I have 10,000 ghosts made up of 10,000 pixels each. If I 
-agragate these by adding the values, all fractures become the mean image. The first Eigen ghost has it's pixels 
-weighted by what the PCA determined is the most important. In this case we take the first 100, because it reduces 
-our dimensions from 10,000 to 100. Much better runtime. The weakest ghost may also be used via boosting but
-I didn't do that because adaboost is like terrible to write from scratch and we aren't getting paid for this yet  
-'''
-
-'''
-def give_up_the_ghosts(xy_train):
-    datas = get_x(xy_train)
-    n_components = 100
-    start = time.time()
-    pca = PCA(n_components=n_components, whiten=True).fit(datas)
-    end = time.time()
-    hacks(start, end)
-    return pca
-
-#This is a sudo random value generator to make sure that I actually did something. It also helps be determine
-# Out of sample pictures (Person mooning the camera) because if the predicted value is worse than random,
-# something is out way out of sample and then I can grab the worst variance from the mean and eject it.
-# I haven't written this yet either because I know several people want it and we want to get paid.
-
-def randocalrisian(i):
-    s = random.randint(4, i)
-    return s-4, s
-
-# This can be used to show a gallery of imaages. It's not essential but good for debugging
-
-def plot_gallery(images, titles, h, w, n_row, n_col):
-    """Helper function to plot a gallery of portraits"""
-    plt.figure(figsize=(1.5* 4 * n_col, 1.5 * 3 * n_row))
-    plt.subplots_adjust(bottom=0, left=.01, right=.99, top=.90, hspace=.35)
-    for i in range(len(images)):
-        plt.subplot(n_row, n_col, i + 1)
-        ghost = images[i]
-        ghost = np.reshape(ghost, (int(680), int(1920)))
-        plt.imshow(ghost, cmap='gray')
-        plt.xticks(())
-        plt.yticks(())
-    plt.show()
-    return
-
-
-# These runs can take awhile pre-optimization/parrellization, so I wrote a fun alarm that plays random music in 15
-# second bursts so I can work on other things while I train a model.
-
-def alert_alarm():
-   path = ["1.wav", "2.wav", "3.wav", "4.wav", "5.wav", "6.wav", "7.wav", "8.wav", "9.wav", "10.wav", "11.wav"]
-   random.shuffle(path)
-   playsound("mix_tape/" + path[0])
-
-# This is for time hacks on processes. I don't use it enough.
-
-def hacks(s, e):
-    return print("\nTime for process took {:.6f} seconds\n".format(e - s))
-
-# Pulls the stage readings to improve my slope. Converts it into a numpy array for Linear algebra stuff. Magic.
-
-def get_Y(data):
-    return np.asarray(data['stage reading'], dtype="|S6")
-
-# Mean squared Error to tell me how dumb this robot is.
-
-def MSE(y_hat, y_true):
-    err =np.subtract(y_hat, y_true)
-    SE = np.square(err)
-    MSE = SE.mean()
-    return math.sqrt(MSE)
-
-# Above was the terrible dev process. Below is some optimized code. It does the same basic function but this is
-# prime cuts.
-
-def train_model(xy_train, xy_test, Eig):
-    x_tr = get_x(xy_train)
-    y_tr = get_Y(xy_train)
-    x_ts = get_x(xy_test)
-    y_ts = get_Y(xy_test)
-    start = time.time()
-    # apply PCA transformation
-    PCA_x_tr = Eig.transform(x_tr)
-    PCA_x_ts = Eig.transform(x_ts)
-    clf = MLPClassifier(batch_size=150, verbose=True, early_stopping=True).fit(np.array(PCA_x_tr), np.array(y_tr))
-    y_pred = clf.predict(PCA_x_ts)
-    results = eval_proto(np.asarray(y_pred, dtype=float), np.asarray(y_ts, dtype=float), xy_test)
-    mse = MSE(np.asarray(y_pred, dtype=float), np.asarray(y_ts, dtype=float))
-    print("True: ", MSE(np.asarray(y_pred, dtype=float), np.asarray(y_ts, dtype=float)))
-    #print(classification_report(y_ts, y_pred))
-
-    #a, z = randocalrisian(len(x_ts))
-    #y_pred = clf.predict(PCA_x_ts[a:z])
-    #print(y_pred, y_ts[a:z])
-    #test_it(x_ts[a:z])
-    start = time.time()
-    print('\n--Reduced dimensions to 9--\n')
-    results.to_csv("evaluation_doc.csv", ',')
-
-    return clf, mse
-
-# Ran out of puns at this point.
-
-def test_it(img):
-    eigenface_titles = list(range(1, len(img)))
-    # ghost = scal_it(K_vect_list, scaler)
-    r = len(img)/2
-    d = len(img)%2 + r
-    plot_gallery(img, eigenface_titles, int(1920), int(680), r, d)
-
-# This is the print out for the results and will one day not be a mess
-
-def eval_proto(yh, yt, df):
-    rando = []
-    for i in yt:
-        rando.append(round(random.uniform(7.10, 11.90), 2))
-
-    print(df.shape)
-    print(yt.shape)
-    ndf= pd.DataFrame(df['path'])
-    ndf['Truth set'] = yt
-    ndf['Predicted'] = yh
-    ndf['Error'] = np.asarray(abs(yt-yh))
-    ndf['Rand_Err'] = np.asarray(abs(yt-rando))
-    print("Random: ", MSE(rando, yt))
-    ndf.reset_index()
-    return ndf.sort_values(['Error'], ascending=0)
-
-# Now starts the final driver code.
-
-def lets_go(Eig, tst, clf):
-    x = get_x(tst)
-    y= get_Y(tst)
-    PCA_x_ts = Eig.transform(x)
-    return clf.predict(PCA_x_ts), y
-
-
-def driver():
-    meta = pd.read_csv("final_meta.csv")
-
-    meta, hold_back = train_test_split(meta, test_size=0.001, random_state=random.randrange(843))
-    hold_back.to_csv('holdback.txt')
-    y_tr= get_Y(hold_back)
-    peek(hold_back)
-    y_act = y_tr[0]
-    goodly = []
-    ctr =0
-    while len(goodly) < 5:
-        ctr+=1
-        gc.collect()
-        xy_train, xy_test = train_test_split(meta, test_size=0.20, random_state=random.randrange(843))
-        Eig = give_up_the_ghosts(xy_train)
-        clf, score = train_model(xy_train, xy_test, Eig)
-        print(ctr)
-        if score < .7:
-            y_hat, y_tr = lets_go(Eig, hold_back, clf)
-            goodly.append(y_hat[0])
-            print("y true = ", y_act, " y hat = ", y_hat[0])
-    print (y_act)
-    print(KNN_soft(goodly))
-    alert_alarm()
-
-# This is like the not actually K nearest Neighbor algo. I will make this better and probably split it from the program
-# when we start getting paid.
-
-def KNN_soft(y_hat):
-    clss = []
-    i = 0
-    while i < 201:
-        clss.append(round(i*.1, 10))
-        i += 1
-    KNN =dict.fromkeys(clss, 0)
-    for i, obj in enumerate(y_hat):
-        tgt = float(y_hat[i])
-        check = round(tgt, 1)
-        KNN[check]+=1
-    best = sorted(((value, key) for (key, value) in KNN.items()), reverse=True)
-    return best
-
-# Advance preview of target image. Suprisingly useful
-
-def peek(meta):
-    x = meta['path']
-    path = x.tolist()
-    for i, obj in enumerate(path):
-        img = Image.open(obj)
-        img = img.convert('L')
-        # show_img(img)
-        img = resize(img, 0, 0)
-        show_img(img)
-        break
-
-def KNN_hard():
-    print("hello world")
-
-
-# This is an algo written to enhance night shots. Not in play at this time. It's fast though
-
-def divider(df, seg):
-    newdf = pd.DataFrame([[0, 'a', 1, 'a', 1.1, 'a', 'a']], columns = ['date/time', 'Orginization', 'Station', 'time zone', 'stage reading', 'disposition', 'path'])
-    for i, obj in enumerate(df.T):
-        temp = pd.DataFrame(df[i:i+1])
-        path = temp['path'].iloc[0]
-        #print(temp.head)
-        meta = temp.drop(columns= ['path'])
-        #print(meta.head)
-        newdf = make_more(newdf, path, meta, seg, i)
-    newdf.to_csv('split_meta.csv', ',')
+    def get_Y(self):
+        self.np_obj = np.asarray(self.df_obj['stage reading'], dtype="|S6")
 
 
 
-def make_more(df, path, meta, seg, set):
-    directory = 'split_cam_img/'
-    #print(meta)
-    img = Image.open(path)
-    rhp, bp = img.size
-    lhp = 0
-    tp = 0
-    sect = int(rhp/seg)
-    i = 0
-    title = ['lb', 'lub', 'rub', 'rb']
-    while i < seg:
-        tmp = meta
-        box = (lhp, tp, (lhp + sect), bp)
-        seg_pic = img.crop(box)
-        f_name = directory + 'img' + str(set) + '_' + title[i] +'.jpg'
-        seg_pic.save(f_name)
-        i += 1
-        lhp = lhp + sect + 1
-        tmp['path'] = f_name
-        print(list(tmp))
-        print(list(df))
-        df = df.append(tmp, ignore_index=True)
-    print(df.head)
-    return df
-'''
+class CAMBOT():
 
-''' ******* COMMAND BLOCK ******* '''
-'''
+    def __init__(self, TR, TS, LS, HB, PCA, HARD, SOFT, Y_pred, int_obj, target_obj):
+        self.TR = TR
+        self.TS = TS
+        self.PCA = PCA
+        self.LS = LS
+        self.HB = HB
+        self.HARD = HARD
+        self.SOFT = SOFT
+        self.Y_pred = Y_pred
+        self.int_obj = int_obj
+        self.target_obj = target_obj
+        self.RMSE = 0
+        self.randy = 0
+
+    def train_model(self):
+        self.LS.time_strt = time.time()
+        self.TR.get_Y()
+        self.TR.get_x()
+        self.TS.get_Y()
+        self.TS.get_x()
+        self.PCA.df_obj = self.TR.df_obj
+        self.PCA.np_obj = self.int_obj
+        self.PCA.give_up_the_ghosts()
+        PCA_x_tr = self.PCA.np_obj.transform(self.TR.df_obj)
+        PCA_x_ts = self.PCA.np_obj.transform(self.TS.df_obj)
+        clf = MLPClassifier(batch_size=150, verbose=True, early_stopping=True).fit(np.array(PCA_x_tr), np.array(self.TR.np_obj))
+        self.Y_pred = clf.predict(PCA_x_ts)
+        print('\n--Reduced dimensions to 9--\n')
+        #results.to_csv("evaluation_doc.csv", ',')
+        self.LS.time_end = time.time()
+        self.LS.hacks()
+        return clf
+
+    def GO(self):
+        self.target_obj = self.HB.df_obj
+        #hold_back.to_csv('holdback.txt')
+        self.peek()
+        self.HB.get_Y()
+        self.HB.get_x()
+        self.SOFT.pred_obj = []
+        ctr = 0
+        while len(self.SOFT.pred_obj) < 100:
+            ctr += 1
+            gc.collect()
+            self.TR.df_obj, self.TS.df_obj = train_test_split(self.LS.df_obj, test_size=0.20, random_state=random.randrange(843))
+            clf = self.train_model()
+            self.MSE()
+            print('--Model Accuracy--\n\nRandom prediction: ', self.randy, '\nAlgorthim prediction: ', self.RMSE, '\nThreshold: 0.7')
+            print('Total Runs: ', ctr)
+            if self.RMSE < .7:
+                PCA_x_ts = self.PCA.np_obj.transform(self.HB.df_obj)
+                self.Y_pred = clf.predict(PCA_x_ts)
+                self.SOFT.pred_obj.append(self.Y_pred[0])
+                print("Successful tests: ", len(self.SOFT.pred_obj))
+                print("\n--Viable slope--\n\ny true = ", self.HB.np_obj[0].decode('utf-8'), " ft   y predicted = ", self.Y_pred[0].decode('utf-8'), 'ft\n')
+        self.HARD.pred_obj = self.SOFT.pred_obj
+        self.SOFT.np_obj = self.HB.np_obj[0]
+        self.HARD.np_obj = self.HB.np_obj[0]
+        self.SOFT.VERIFY()
+        self.HARD.VERIFY()
+        #print ('\nHard Precision: ', 100*(self.HARD.FP/len(self.SOFT.pred_obj)), '%%\nSoft Prediction: ', 100 * (self.SOFT.FP/len(self.SOFT.pred_obj)),
+        #       '%%\n\nConfidence score: ')
+        #alert_alarm()
+
+    # Mean squared Error to tell me how dumb this robot is.
+
+    def MSE(self):
+        self.randy = [np.array(self.TS.np_obj, dtype = float).mean()] * len(self.TS.np_obj)
+        for i, obj in enumerate(self.randy):
+            self.randy[i] = obj*self.randocalrisian()
+        err = np.subtract(np.array(self.randy, dtype=float), np.array(self.TS.np_obj, dtype=float))
+        SE = np.square(err)
+        self.randy = math.sqrt(SE.mean())
+        err = np.subtract(np.array(self.Y_pred, dtype=float), np.array(self.TS.np_obj, dtype=float))
+        SE = np.square(err)
+        self.RMSE = math.sqrt(SE.mean())
+
+    def randocalrisian(self):
+        s = random.uniform(.25, 1.75)
+        return s
+
+
+    def peek(self):
+        x = self.target_obj['path']
+        path = x.tolist()
+        for i, obj in enumerate(path):
+            img = Image.open(obj)
+            img = img.resize((3*192, 3*108))
+            plt.imshow(img)
+            plt.show()
+            break
+
+class verify:
+
+    def __init__(self, acc_obj, depth):
+        self.pred_obj = 0
+        self.FP = 0
+        self.acc_obj = acc_obj
+        self.TP = 0
+        self.np_obj = 0
+        self.depth = depth
+        d = decimal.Decimal(str(acc_obj))
+        r = d.as_tuple().exponent
+        self.precision = abs(r)
+        self.rng = depth * (10**self.precision)
+        print(self.rng)
+
+    def VERIFY(self):
+        clss = []
+        i = 0
+        while i < self.rng+1:
+            clss.append(round(i * self.acc_obj, self.precision))
+            i += 1
+        KNN = dict.fromkeys(clss, 0)
+        for i, obj in enumerate(self.pred_obj):
+            tgt = float(self.pred_obj[i])
+            check = round(tgt, self.precision)
+            KNN[check] += 1
+        best = sorted(((value, key) for (key, value) in KNN.items()), reverse=True)
+        choice = best[0][1]
+        TP = best[0][0]
+        Precision = (TP/len(self.pred_obj)) * 100
+        print (choice, '\n', TP, '\n', Precision, '%')
+        FP = np.subtract(np.array(best), np.array((0, best[0][1])))
+        print(FP)
+        a = np.array()
+        print(np.where(best[:100,][1] > 0, a, best[:100,][1]))
+
+
+
+
+
+
+##### Command Block #####
+
+Hold_back = Cambrain(0, 0, 2, 0, 0)
+
+Learning_set = Cambrain(0, 0, 2, 0, 0)
+
 #Produce Eignen Vectors and Values Via PCA
 
-meta = pd.read_csv("final_meta.csv")
+datas = pd.read_csv("final_meta.csv")
 
-xy_train, xy_test = train_test_split(meta, test_size=0.1, random_state=random.randrange(843))
+Learning_set.df_obj, Hold_back.df_obj = train_test_split(datas, test_size=0.001, random_state=random.randrange(843))
 
+print (Learning_set.df_obj.shape)
 
+PCA = Cambrain(Learning_set.df_obj, 0, 2, 0, 2)
 
-Eig = give_up_the_ghosts(xy_train)
-print("\n--PCA complete--\n")
+Tr_set = Cambrain(Learning_set.df_obj ,0 ,2 ,0 ,0)
 
-start, end = train_model(xy_train, xy_test, Eig)
+Ts_set = Cambrain(Learning_set.df_obj, 0, 2, 0, 0)
 
-driver()
-gc.collect()
+Target_set = Cambrain(Hold_back.df_obj, 0, 2, 0, 0)
 
-#save everything here
+soft = verify(0.1, 20)
 
-'''
-'''
-Tr_file = "Train.npy"
-Ts_file = "Test.npy"
-Eig_file = "Eig_vect.npy"
+hard = verify(0.01, 20)
 
-#np.save(Tr_file, Tr_datas)
-#Tr_DF_h.to_csv("H_TR.csv")
-#Ts_DF_h.to_csv("H_TS.csv")
-#np.save(Ts_file, Ts_datas)
-np.save(Eig_file, K_vect_list)
+cambot = CAMBOT(Tr_set, Ts_set, Learning_set, Hold_back, PCA, hard, soft, 0, 100, 0)
 
-gc.collect()
-
-#Tr_datas = np.load("Train.npy")
-#Ts_datas = np.load("Test.npy")
-k_eig = np.load("Eig_vect.npy")
-#Tr_DF_h = pd.read_csv("H_TR.csv")
-#Ts_DF_h = pd.read_csv("H_TS.csv")
-'''
+cambot.GO()
 
 
-#divider(merg, 4)
+
